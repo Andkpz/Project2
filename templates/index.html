@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Классификация запросов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+        }
+
+        .result.error {
+            border-left-color: #dc3545;
+            background: #ffe6e6;
+        }
+
+        .result h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .result-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .category {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .confidence {
+            color: #28a745;
+        }
+
+        .original-text, .processed-text {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-style: italic;
+            color: #555;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #856404;
+        }
+
+        .debug-info summary {
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Классификация запросов</h1>
+        <p class="subtitle">Введите текст для определения категории</p>
+        
+        <form method="POST" action="/">
+            <div class="form-group">
+                <label for="text">Ваш запрос:</label>
+                <textarea 
+                    id="text" 
+                    name="text" 
+                    placeholder="Введите текст здесь..."
+                    required
+                >{{ text }}</textarea>
+                <button type="button" id="voiceBtn">🎤 Говорить</button>
+            </div>
+            
+            <button type="submit" id="submitBtn">Классифицировать</button>
+        </form>
+
+        <!-- Блок ошибок -->
+        {% if error %}
+        <div class="result error">
+            <h2>❌ Ошибка</h2>
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Блок результатов -->
+        <!-- ВАЖНО: используем 'is not none', чтобы класс '0' отображался корректно -->
+                {% if prediction is not none %}
+        <div class="result">
+            <h2>📊 Результат классификации</h2>
+            
+            <div class="result-item">
+                <div class="result-label">Категория:</div>
+                <div class="result-value">
+                    <span class="category">{{ prediction_name or prediction }}</span>
+                </div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">ID категории:</div>
+                <div class="result-value">{{ prediction }}</div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">Уверенность модели:</div>
+                <div class="result-value confidence">
+                    {{ "%.2f"|format(confidence * 100) }}%
+                </div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">Текст после обработки:</div>
+                <div class="processed-text">{{ processed_text }}</div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">Исходный текст:</div>
+                <div class="original-text">{{ text }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Показываем загрузку при отправке формы
+        document.querySelector('form').addEventListener('submit', function() {
+            const button = document.getElementById('submitBtn');
+            button.textContent = 'Обработка...';
+            button.disabled = true;
+        });
+
+            const voiceBtn = document.getElementById("voiceBtn");
+    const textarea = document.getElementById("text");
+
+    let recognition;
+
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = "ru-RU"; // можно поменять
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        voiceBtn.addEventListener("click", () => {
+            recognition.start();
+            voiceBtn.textContent = "🎙️ Слушаю...";
+        });
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            textarea.value = text;
+        };
+
+        recognition.onend = () => {
+            voiceBtn.textContent = "🎤 Говорить";
+        };
+
+        recognition.onerror = (event) => {
+            console.error(event.error);
+            voiceBtn.textContent = "❌ Ошибка";
+        };
+
+    } else {
+        voiceBtn.disabled = true;
+        voiceBtn.textContent = "❌ Не поддерживается";
+    }
+    </script>
+</body>
+</html>
