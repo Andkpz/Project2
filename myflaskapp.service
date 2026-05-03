@@ -1,0 +1,30 @@
+[Unit]
+Description=Gunicorn Flask Application - Project2
+After=network.target
+
+[Service]
+# Пользователь и группа
+User=admin
+Group=admin
+
+# Рабочая директория проекта
+WorkingDirectory=/home/admin/Project2
+
+# Переменные окружения
+Environment="PATH=/home/admin/Project2/venv/bin"
+Environment="FLASK_ENV=production"
+
+# Команда запуска Gunicorn на порту 8000
+ExecStart=/home/admin/Project2/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 wsgi:app
+
+# Автоматический перезапуск при сбоях
+Restart=on-failure
+RestartSec=5s
+
+# Логирование
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=project2
+
+[Install]
+WantedBy=multi-user.target
