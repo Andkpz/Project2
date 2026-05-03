@@ -1,6 +1,6 @@
 upstream backend_servers {
-    server 192.168.0.первый:5000;
-    server 192.168.0.второй:5000;
+    server 192.168.0.первый:8000;
+    server 192.168.0.второй:8000;
 }
 
 server {
